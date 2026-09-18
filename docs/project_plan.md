@@ -68,7 +68,7 @@ Agregar pruebas automáticas.
 
 ## Estado actual
 
-Fase actual: 0 — Planeación.
+Fase actual: 1 — Modelo básico.
 
 ## Decisiones técnicas
 
@@ -76,3 +76,17 @@ Fase actual: 0 — Planeación.
 - Programación orientada a objetos.
 - Una sola unidad de ascensor al inicio.
 - Sin librerías externas al comienzo.
+
+
+
+
+## Registro de avance
+
+### 2026-09-17
+
+- Se creó la estructura inicial del proyecto.
+- Se creó el documento maestro `project_plan.md`.
+- Se creó el repositorio Git local.
+- Se conectó el repositorio remoto en GitHub.
+- Se realizó el primer commit: `Initial project structure`.
+- Se inicia la Fase 1: Modelo básico.
