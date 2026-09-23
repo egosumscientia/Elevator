@@ -90,3 +90,7 @@ Fase actual: 1 — Modelo básico.
 - Se conectó el repositorio remoto en GitHub.
 - Se realizó el primer commit: `Initial project structure`.
 - Se inicia la Fase 1: Modelo básico.
+
+
+
+
