@@ -1,19 +1,23 @@
 from src.elevator.building import Building
 from src.elevator.elevator import Elevator
 
-building01 = Building(1, 3)
-elevator01 = Elevator(building01)
+building = Building(1, 5)
+elevator = Elevator(building)
 
-print(elevator01.current_floor, elevator01.moving)  # 1 False
+print("Start:", elevator.current_floor, elevator.moving)
 
-elevator01.move_up()
-elevator01.move_up()
-print(elevator01.current_floor, elevator01.moving)  # 3 False
+elevator.move_to_floor(4)
+print("Move up to 4:", elevator.current_floor, elevator.moving)
 
-elevator01.move_down()
-print(elevator01.current_floor, elevator01.moving)  # 2 False
+elevator.move_to_floor(2)
+print("Move down to 2:", elevator.current_floor, elevator.moving)
 
-elevator01.move_down()
-print(elevator01.current_floor, elevator01.moving)  # 1 False
+elevator.move_to_floor(2)
+print("Stay on 2:", elevator.current_floor, elevator.moving)
 
-elevator01.move_down()  # ValueError esperado: ya está en el piso mínimo
+try:
+    elevator.move_to_floor(6)
+except ValueError as error:
+    print("Invalid destination:", error)
+
+print("After invalid destination:", elevator.current_floor, elevator.moving)

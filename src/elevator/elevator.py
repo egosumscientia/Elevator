@@ -19,3 +19,14 @@ class Elevator:
             self.moving = True
             self.current_floor -= 1
             self.moving = False
+
+    def move_to_floor(self, floor):
+        if not self.building.is_valid_floor(floor):
+            raise ValueError("The destination floor does not exist in the building.")
+        elif self.current_floor == floor:
+            return
+        while self.current_floor < floor:
+            self.move_up()
+        while self.current_floor > floor:
+            self.move_down()
+
