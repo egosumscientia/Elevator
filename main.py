@@ -1,74 +1,67 @@
 from src.elevator.building import Building
 from src.elevator.elevator import Elevator
 
-building = Building(1, 5)
+
+building = Building(lowest_floor=1, highest_floor=5)
 elevator = Elevator(building)
 
-# Door starts closed
-print("Initial door state:", elevator.is_door_open)
+initial_floor = elevator.current_floor
 
-# Open doors
-elevator.open_doors()
-print("After opening:", elevator.is_door_open)
+# Initial request state
+assert elevator.external_calls == set()
+assert elevator.internal_calls == set()
 
-# Try opening again
-try:
-    elevator.open_doors()
-except ValueError as error:
-    print("Open again:", error)
+# External floor calls
+elevator.external_call_to_floor(4)
+elevator.external_call_to_floor(2)
 
-# Close doors
-elevator.close_doors()
-print("After closing:", elevator.is_door_open)
+assert elevator.external_calls == {2, 4}
+assert elevator.current_floor == initial_floor
 
-# Try closing again
-try:
-    elevator.close_doors()
-except ValueError as error:
-    print("Close again:", error)
+# Duplicate external call
+elevator.external_call_to_floor(4)
 
-# Block move_up with open doors
-elevator.open_doors()
+assert elevator.external_calls == {2, 4}
 
-print("Floor before blocked movement:", elevator.current_floor)
+# Invalid external calls
+for invalid_floor in (0, 6):
+    try:
+        elevator.external_call_to_floor(invalid_floor)
+        assert False, f"Expected ValueError for external floor {invalid_floor}"
+    except ValueError:
+        pass
 
-try:
-    elevator.move_up()
-except ValueError as error:
-    print("Blocked move_up:", error)
+assert elevator.external_calls == {2, 4}
 
-print("Floor after blocked move_up:", elevator.current_floor)
-print("Door still open:", elevator.is_door_open)
+# Internal destination requests
+elevator.internal_call_to_floor(5)
+elevator.internal_call_to_floor(3)
 
-# Block move_to_floor with open doors
-try:
-    elevator.move_to_floor(4)
-except ValueError as error:
-    print("Blocked move_to_floor:", error)
+assert elevator.internal_calls == {3, 5}
+assert elevator.current_floor == initial_floor
 
-print("Floor after blocked move_to_floor:", elevator.current_floor)
-print("Door still open:", elevator.is_door_open)
+# Duplicate internal destination
+elevator.internal_call_to_floor(5)
 
-# Close doors and verify normal movement
-elevator.close_doors()
-elevator.move_to_floor(3)
+assert elevator.internal_calls == {3, 5}
 
-print("Moved normally to:", elevator.current_floor)
+# Invalid internal destinations
+for invalid_floor in (0, 6):
+    try:
+        elevator.internal_call_to_floor(invalid_floor)
+        assert False, f"Expected ValueError for internal floor {invalid_floor}"
+    except ValueError:
+        pass
 
-# Block move_down with open doors
-elevator.open_doors()
+assert elevator.internal_calls == {3, 5}
 
-try:
-    elevator.move_down()
-except ValueError as error:
-    print("Blocked move_down:", error)
+# Requests must remain independent
+assert elevator.external_calls == {2, 4}
+assert elevator.internal_calls == {3, 5}
 
-print("Floor after blocked move_down:", elevator.current_floor)
-print("Door still open:", elevator.is_door_open)
+# Registering requests must not affect physical elevator state
+assert elevator.current_floor == initial_floor
+assert elevator.moving is False
+assert elevator.is_door_open is False
 
-# Close doors and move normally
-elevator.close_doors()
-elevator.move_down()
-
-print("Floor after valid move_down:", elevator.current_floor)
-print("Door closed:", elevator.is_door_open)
+print("Phase 4 request tests passed.")

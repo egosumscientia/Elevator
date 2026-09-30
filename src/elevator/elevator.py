@@ -4,6 +4,8 @@ class Elevator:
         self.current_floor = building.lowest_floor
         self.is_door_open = False
         self.moving = False
+        self.internal_calls = set()
+        self.external_calls = set()
 
     def move_up(self):
         if self.current_floor == self.building.highest_floor:
@@ -49,3 +51,15 @@ class Elevator:
             self.is_door_open = False
         else:
             raise ValueError("The door is already closed")
+
+    def external_call_to_floor(self, destination_floor):
+        if not self.building.is_valid_floor(destination_floor):
+            raise ValueError("The destination floor does not exist in the building.")
+        else:
+            self.external_calls.add(destination_floor)
+
+    def internal_call_to_floor(self, destination_floor):
+        if not self.building.is_valid_floor(destination_floor):
+            raise ValueError("The destination floor does not exist in the building.")
+        else:
+            self.internal_calls.add(destination_floor)
