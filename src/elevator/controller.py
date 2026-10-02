@@ -24,3 +24,13 @@ class ElevatorController:
                selected_floor_so_far = floor
 
         return selected_floor_so_far
+
+    def start_movement(self):
+        destination_floor = self.get_nearest_destination_floor()
+        if destination_floor is not None:
+            if self.elevator.is_door_open:
+                self.elevator.close_doors()
+            self.elevator.move_to_floor(destination_floor)
+            self.elevator.open_doors()
+            self.elevator.internal_calls.discard(destination_floor)
+            self.elevator.external_calls.discard(destination_floor)

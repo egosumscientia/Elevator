@@ -6,9 +6,9 @@ Introduce an `ElevatorController` responsible for separating control and decisio
 
 The existing `Elevator` class represents the elevator state and provides the operations that can physically change that state.
 
-The controller will be responsible for deciding how those existing operations should be used in response to pending requests.
+The controller is responsible for deciding how those existing operations should be used in response to pending requests.
 
-This phase introduces the controller layer, but it does **not** yet introduce the console interface or advanced elevator scheduling algorithms.
+This phase introduces the controller layer, but it does **not** introduce the console interface or advanced elevator scheduling algorithms.
 
 ## Current System State
 
@@ -31,7 +31,7 @@ Before Phase 5, the system already supports:
 - Duplicate requests prevented through set-based storage.
 - Registration of requests without automatic elevator movement.
 
-The request state currently exists in:
+The request state exists in:
 
 - `elevator.external_calls`
 - `elevator.internal_calls`
@@ -63,104 +63,107 @@ This includes:
 - Storing external calls.
 - Storing internal destination requests.
 
-The elevator itself must not become responsible for choosing which pending request should be served next.
+The elevator itself does not choose which pending request should be served next.
 
 ### ElevatorController
 
-`ElevatorController` introduces the decision-making layer.
+`ElevatorController` provides the decision-making layer.
 
-It operates on an existing `Elevator` instance and is responsible for coordinating elevator behavior based on the requests and state already represented by the elevator.
+It operates on an existing `Elevator` instance and coordinates elevator behavior based on the requests and state already represented by the elevator.
 
-The controller must use the elevator's existing public operations rather than duplicating physical movement logic.
+The controller uses the elevator's existing public operations rather than duplicating physical movement logic.
 
-## Initial Scope
+## Request Inspection
 
-Phase 5 will introduce `ElevatorController` incrementally.
+The controller can inspect:
 
-The controller must:
+- `elevator.external_calls`
+- `elevator.internal_calls`
 
-1. Be associated with an existing `Elevator`.
-2. Be able to inspect the elevator's pending requests.
-3. Contain the logic used to decide what request should be handled.
-4. Coordinate the elevator through its existing movement operations.
-5. Keep decision logic outside the `Elevator` class.
+External and internal requests are combined temporarily when determining the next destination.
 
-The exact request-selection policy must be defined before implementing scheduling behavior.
+The original request sets remain separate and are not modified merely to perform request selection.
 
-Existing Phase 1–4 behavior must remain unchanged unless a modification is strictly necessary for the controller.
+## Request Selection Policy
 
-## Design Decisions Not Yet Specified
+External and internal requests have equal priority when selecting the next destination.
 
-The project plan does not currently define several controller behaviors.
+The next request is selected according to the following policy:
 
-These decisions must be made explicitly during Phase 5 rather than assumed.
+1. Calculate the absolute distance between the elevator's current floor and every pending requested floor.
+2. Select the requested floor with the shortest distance.
+3. If two requested floors are equally distant from the current floor, select the higher floor.
+4. Request arrival order is not considered.
 
-### Request selection
+Because arrival order is not required, the existing set-based request representation remains unchanged.
 
-When multiple requests exist, it is not yet defined which request should be handled first.
+If there are no pending requests, no destination is selected.
 
-Possible policies could include:
+## Controller Movement
 
-- Nearest requested floor.
-- Lowest requested floor.
-- Highest requested floor.
-- Request arrival order.
-- Direction-aware scheduling.
+When a pending destination exists, the controller coordinates movement by calling the elevator's existing `move_to_floor()` operation.
 
-No policy should be implemented until it is explicitly selected.
+The controller does not directly manipulate `current_floor` or reproduce the movement logic already implemented by `Elevator`.
 
-### External versus internal requests
+If there are no pending requests, requesting controller movement produces no movement.
 
-External and internal requests are currently stored separately.
+## Request Completion
 
-It is not yet defined whether:
+A request is considered completed when the elevator reaches the requested floor.
 
-- They have equal priority.
-- Internal requests have priority.
-- External requests have priority.
-- They should be combined when making controller decisions.
+After successful arrival:
 
-### Request completion
+- The destination is removed from `external_calls` if present.
+- The destination is removed from `internal_calls` if present.
+- If the same floor was requested both externally and internally, both requests are considered completed.
 
-It is not yet defined exactly when a request becomes completed and should be removed from pending request state.
+Requests are removed only after successful arrival.
 
-### Automatic door operation
+## Automatic Door Operation
 
-It is not yet defined whether arriving at a requested floor should automatically open the doors during this phase.
+Door operation is coordinated automatically by the controller.
 
-### Request ordering
+Before moving toward a pending destination:
 
-The current request collections are sets.
+- If the doors are already closed, no door action is required.
+- If the doors are open, the controller closes them before movement.
 
-Sets intentionally prevent duplicates but do not preserve arrival order.
+After reaching the requested floor:
 
-Therefore, any scheduling policy requiring FIFO or request age would require an explicit change to request representation. Such a change must not be made implicitly.
+- The controller automatically opens the doors.
 
-## Work Order
+Therefore, consecutive controller operations follow this behavior:
 
-Implement and review Phase 5 one part at a time.
+1. Select the next destination.
+2. Close the doors if necessary.
+3. Move to the selected floor.
+4. Open the doors.
+5. Remove the completed request from pending request state.
 
-1. Introduce the `ElevatorController` class and associate it with an existing elevator.
-2. Verify that introducing the controller does not change existing elevator behavior.
-3. Define the minimum information the controller needs from the elevator.
-4. Explicitly choose the simple request-selection behavior required for this phase.
-5. Implement that decision behavior.
-6. Implement controller coordination with the elevator using existing elevator operations.
-7. Define and implement when handled requests are removed.
-8. Verify controller behavior with external requests.
-9. Verify controller behavior with internal requests.
-10. Verify behavior when both request types exist.
-11. Verify that all Phase 1–4 behavior still works.
+A request for the elevator's current floor is also considered valid. In that case, no physical floor movement is required, the doors are opened, and the request is completed.
 
-Each part must be reviewed before moving to the next.
+## Verified Behavior
 
-The user writes the implementation.
+Manual verification during Phase 5 confirmed:
 
-The assistant provides complete manual test code when testing is required.
+- The controller can inspect external and internal requests.
+- The nearest requested floor is selected.
+- Equal-distance requests select the higher floor.
+- External and internal requests participate equally in destination selection.
+- A destination requested by both request types is removed from both sets after service.
+- External-only requests are handled correctly.
+- Internal-only requests are handled correctly.
+- Multiple requests can be handled consecutively.
+- No pending requests result in no movement.
+- Requests are not removed when movement fails.
+- Doors open automatically after arrival.
+- Open doors are automatically closed before serving the next destination.
+- Requests for the current floor are handled correctly.
+- Existing Phase 1–4 behavior remains unchanged.
 
 ## Out of Scope
 
-Do **not** implement in this phase unless explicitly added to the Phase 5 requirements:
+Do **not** implement in this phase:
 
 - Console user interface.
 - Multiple elevators.
@@ -180,31 +183,35 @@ Do **not** implement in this phase unless explicitly added to the Phase 5 requir
 
 The console interface belongs to Phase 6.
 
-Automated test infrastructure belongs to Phase 7 according to the current project plan, although manual tests may continue to be used during development.
+Automated test infrastructure belongs to Phase 7. Manual tests are used during the current development phases.
 
 ## Constraints
 
-Phase 5 must preserve all correct behavior from Phases 1–4.
+Phase 5 preserves all correct behavior from Phases 1–4.
 
-Registering a request must remain separate from physically moving the elevator.
+Registering a request remains separate from physically moving the elevator.
 
-The `ElevatorController` must not duplicate movement validation already implemented by `Elevator`.
+`ElevatorController` does not duplicate movement validation already implemented by `Elevator`.
 
-The controller should coordinate existing elevator behavior rather than directly manipulating physical elevator state when an existing elevator operation already represents that behavior.
+The controller coordinates existing elevator behavior rather than directly manipulating physical elevator state when an existing elevator operation represents that behavior.
 
-No advanced scheduling behavior should be introduced without first defining it explicitly.
+No advanced scheduling behavior is introduced.
 
 ## Completion Criteria
 
-Phase 5 will be complete when:
+Phase 5 is complete when:
 
 - `ElevatorController` exists as a separate class.
 - It operates on an existing `Elevator`.
 - Decision logic is separated from the elevator's physical operations.
-- A clearly documented request-selection policy exists.
-- The controller can use pending requests to determine elevator behavior according to that policy.
-- Completed requests are handled according to an explicitly defined rule.
-- External and internal requests interact according to an explicitly defined rule.
+- The nearest-request selection policy is implemented.
+- Equal-distance requests prioritize the higher floor.
+- External and internal requests have equal selection priority.
+- The controller coordinates movement through existing elevator operations.
+- Completed requests are removed after arrival.
+- Requests present in both request sets are removed from both.
+- Doors close automatically before subsequent movement when necessary.
+- Doors open automatically after arrival.
 - Existing Phase 1–4 behavior remains correct.
 - No Phase 6 console interface has been introduced.
 - No unnecessary advanced scheduling behavior has been added.
