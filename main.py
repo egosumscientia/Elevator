@@ -2,80 +2,60 @@ from src.elevator.building import Building
 from src.elevator.elevator import Elevator
 from src.elevator.controller import ElevatorController
 
-building = Building(1, 5)
+building = Building(1,5)
 elevator = Elevator(building)
 controller = ElevatorController(elevator)
 
-print("=== INITIAL STATE ===")
-print(elevator.current_floor)       # Expected: 1
-print(elevator.moving)             # Expected: False
-print(elevator.is_door_open)       # Expected: False
+def show_menu():
+    print("GENERAL CONTROL PANEL")
+    print(" 1. View elevator state")
+    print(" 2. Register external call")
+    print(" 3. Register internal destination")
+    print(" 4. Handle next request")
+    print(" 5. Exit")
 
-print("\n=== MOVEMENT ===")
-elevator.move_up()
-print(elevator.current_floor)       # Expected: 2
 
-elevator.move_down()
-print(elevator.current_floor)       # Expected: 1
+def execute_program():
+    while True:
+        show_menu()
+        option = input("Select an option (1-5): ").strip()
 
-elevator.move_to_floor(5)
-print(elevator.current_floor)       # Expected: 5
+        match option:
+            case "1":
+                print("\nView elevator state...")
+                print("\n Current floor: " + str(elevator.current_floor))
+                print("Open" if elevator.is_door_open else "Closed")
+                print("\n Pending external calls: ")
+                print(elevator.external_calls)
+                print("\n Pending internal requests")
+                print(elevator.internal_calls)
+            case "2":
+                print("\nRegister external call...")
+                try:
+                    input_floor = input("Select the destiny floor").strip()
+                    input_floor = int(input_floor)
+                    elevator.external_call_to_floor(input_floor)
+                    print(f"Call successfully registered for floor {input_floor}!")
+                except ValueError as error:
+                    print(error)
+            case "3":
+                print("\nRegister internal destination...")
+                try:
+                    destiny_floor = input("Select the destiny floor")
+                    destiny_floor = int(destiny_floor)
+                    elevator.internal_call_to_floor(destiny_floor)
+                    print(f"Call successfully registered for floor {destiny_floor}!")
+                except ValueError as error:
+                    print(error)
+            case "4":
+                print("\nHandle next request...")
+                controller.start_movement()
+            case "5":
+                print("\nEXIT...")
+                break
+            case _:
+                print("\n❌ Error: Invalid option. Please type a number between 1 and 5.")
 
-print("\n=== BUILDING LIMITS ===")
-try:
-    elevator.move_up()
-except ValueError as error:
-    print(type(error).__name__)      # Expected: ValueError
 
-elevator.move_to_floor(1)
-
-try:
-    elevator.move_down()
-except ValueError as error:
-    print(type(error).__name__)      # Expected: ValueError
-
-print("\n=== DOORS ===")
-elevator.open_doors()
-print(elevator.is_door_open)        # Expected: True
-
-try:
-    elevator.open_doors()
-except ValueError as error:
-    print(type(error).__name__)      # Expected: ValueError
-
-try:
-    elevator.move_up()
-except ValueError as error:
-    print(type(error).__name__)      # Expected: ValueError
-
-elevator.close_doors()
-print(elevator.is_door_open)        # Expected: False
-
-try:
-    elevator.close_doors()
-except ValueError as error:
-    print(type(error).__name__)      # Expected: ValueError
-
-print("\n=== REQUESTS ===")
-elevator.external_call_to_floor(4)
-elevator.internal_call_to_floor(3)
-
-print(elevator.external_calls)      # Expected: {4}
-print(elevator.internal_calls)      # Expected: {3}
-print(elevator.current_floor)       # Expected: 1
-
-print("\n=== INVALID REQUESTS ===")
-try:
-    elevator.external_call_to_floor(6)
-except ValueError as error:
-    print(type(error).__name__)      # Expected: ValueError
-
-try:
-    elevator.internal_call_to_floor(0)
-except ValueError as error:
-    print(type(error).__name__)      # Expected: ValueError
-
-print("\n=== CONTROLLER DID NOT ALTER REQUEST REGISTRATION ===")
-print(elevator.external_calls)      # Expected: {4}
-print(elevator.internal_calls)      # Expected: {3}
-print(elevator.current_floor)       # Expected: 1
+if __name__ == "__main__":
+    execute_program()
